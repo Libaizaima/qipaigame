@@ -100,3 +100,33 @@ export const walletApi = {
   getTransactions: (token: string, page = 1, limit = 20) =>
     api(`/wallet/transactions?page=${page}&limit=${limit}`, { token }),
 };
+
+// ===== Admin =====
+export const adminApi = {
+  getUsers: (token: string, page = 1, limit = 20) =>
+    api(`/admin/users?page=${page}&limit=${limit}`, { token }),
+
+  adjustBalance: (token: string, userId: string, body: { amount: number; reason: string }) =>
+    api(`/admin/users/${userId}/adjust-balance`, { method: 'POST', body, token }),
+
+  banUser: (token: string, userId: string) =>
+    api(`/admin/users/${userId}/ban`, { method: 'POST', token }),
+
+  activateUser: (token: string, userId: string) =>
+    api(`/admin/users/${userId}/activate`, { method: 'POST', token }),
+
+  getBets: (token: string, page = 1, limit = 20) =>
+    api(`/admin/bets?page=${page}&limit=${limit}`, { token }),
+
+  getTransactions: (token: string, page = 1, limit = 20) =>
+    api(`/admin/transactions?page=${page}&limit=${limit}`, { token }),
+};
+
+// ===== Solo Baccarat =====
+export const soloApi = {
+  play: (token: string, bets: { betType: string; betAmount: number }[]) =>
+    api('/solo/baccarat/play', { method: 'POST', body: { bets }, token }),
+
+  getHistory: (token: string, page = 1, limit = 20) =>
+    api(`/solo/baccarat/history?page=${page}&limit=${limit}`, { token }),
+};

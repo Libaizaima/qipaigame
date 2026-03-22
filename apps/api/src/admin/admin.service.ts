@@ -1,12 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { GameLoopService } from '../game/game-loop.service';
+import { WalletService } from '../wallet/wallet.service';
 
 @Injectable()
 export class AdminService {
   constructor(
     private prisma: PrismaService,
     private gameLoopService: GameLoopService,
+    private walletService: WalletService,
   ) {}
 
   /**
@@ -72,6 +74,19 @@ export class AdminService {
     ]);
 
     return { items: txs, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  /**
+   * 调整用户积分
+   */
+  async adjustBalance(userId: string, amount: number, reason: string, operatorId: string) {
+    if (amount === 0) {
+      throw new BadRequestException('调整金额不能为 0');
+    }
+    if (!reason || reason.trim().length === 0) {
+      throw new BadRequestException('请填写调整原因');
+    }
+    return this.walletService.adminAdjust(userId, amount, reason.trim(), operatorId);
   }
 
   /**

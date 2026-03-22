@@ -16,6 +16,7 @@ import { BetModule } from './bet/bet.module';
 import { SettlementModule } from './settlement/settlement.module';
 import { HistoryModule } from './history/history.module';
 import { AdminModule } from './admin/admin.module';
+import { SoloBaccaratModule } from './solo-baccarat/solo-baccarat.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { AdminModule } from './admin/admin.module';
     SettlementModule,
     HistoryModule,
     AdminModule,
+    SoloBaccaratModule,
   ],
 })
 export class AppModule {}

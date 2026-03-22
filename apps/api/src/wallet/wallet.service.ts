@@ -105,6 +105,72 @@ export class WalletService {
   }
 
   /**
+   * 管理员调整积分（加/减）
+   */
+  async adminAdjust(
+    userId: string,
+    amount: number,
+    reason: string,
+    operatorId: string,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      // 锁定钱包行
+      const wallets = await tx.$queryRaw<any[]>`
+        SELECT * FROM wallets WHERE user_id = ${userId} FOR UPDATE
+      `;
+      const wallet = wallets[0];
+
+      if (!wallet) {
+        throw new BadRequestException('钱包不存在');
+      }
+
+      const currentBalance = Number(wallet.balance);
+      const newBalance = currentBalance + amount;
+
+      if (newBalance < 0) {
+        throw new BadRequestException(`余额不足，当前余额: ${currentBalance}`);
+      }
+
+      // 更新余额
+      await tx.wallet.update({
+        where: { userId },
+        data: { balance: newBalance },
+      });
+
+      // 写入账变流水
+      const referenceId = `admin_${operatorId}_${Date.now()}`;
+      await tx.walletTransaction.create({
+        data: {
+          userId,
+          walletId: wallet.id,
+          type: 'ADMIN_ADJUST',
+          amount,
+          beforeBalance: currentBalance,
+          afterBalance: newBalance,
+          referenceType: 'ADMIN_ADJUST',
+          referenceId,
+        },
+      });
+
+      // 写入操作日志
+      await tx.operationLog.create({
+        data: {
+          operator: operatorId,
+          action: 'ADJUST_BALANCE',
+          target: userId,
+          detail: { amount, reason, beforeBalance: currentBalance, afterBalance: newBalance },
+        },
+      });
+
+      this.logger.log(
+        `Admin ${operatorId} adjusted user ${userId} balance: ${currentBalance} -> ${newBalance} (${amount > 0 ? '+' : ''}${amount}), reason: ${reason}`,
+      );
+
+      return { beforeBalance: currentBalance, afterBalance: newBalance, amount };
+    });
+  }
+
+  /**
    * 查询账变流水
    */
   async getTransactions(userId: string, page: number = 1, limit: number = 20) {

@@ -13,6 +13,15 @@ const games = [
     tags: ['经典', '高赔率'],
   },
   {
+    code: 'solo-baccarat',
+    name: '单人百家乐',
+    icon: '🎴',
+    description: '自主节奏，随时下注开牌。支持多注区同时下注，一键发牌即时开奖',
+    gradient: 'linear-gradient(135deg, #1a4a3a 0%, #22735a 50%, #059669 100%)',
+    href: '/game/solo-baccarat',
+    tags: ['单人', '即时开奖'],
+  },
+  {
     code: 'dice',
     name: '骰宝',
     icon: '🎲',
@@ -37,7 +46,7 @@ export default function LobbyPage() {
           </p>
           <div className="hero-stats">
             <div className="stat-item">
-              <span className="stat-value">2</span>
+              <span className="stat-value">3</span>
               <span className="stat-label">热门游戏</span>
             </div>
             <div className="stat-divider" />

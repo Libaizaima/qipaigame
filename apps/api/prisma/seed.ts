@@ -66,6 +66,22 @@ async function main() {
   });
   console.log(`✅ Room created: ${diceRoom.roomName}`);
 
+  // ===== 创建单人百家乐房间 =====
+  const soloBaccaratRoom = await prisma.gameRoom.upsert({
+    where: { roomCode: 'solo-baccarat-01' },
+    update: {},
+    create: {
+      gameId: baccarat.id,
+      roomCode: 'solo-baccarat-01',
+      roomName: '单人百家乐',
+      status: 'ACTIVE',
+      minBet: 10,
+      maxBet: 50000,
+      bettingSeconds: 0,
+    },
+  });
+  console.log(`✅ Room created: ${soloBaccaratRoom.roomName}`);
+
   // ===== 创建管理员账号 =====
   const adminPasswordHash = await bcrypt.hash('admin123456', 10);
   const admin = await prisma.user.upsert({

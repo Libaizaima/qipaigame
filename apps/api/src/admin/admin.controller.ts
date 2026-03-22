@@ -1,7 +1,7 @@
-import { Controller, Get, Post, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminService } from './admin.service';
-import { Roles } from '../common/decorators';
+import { Roles, CurrentUser } from '../common/decorators';
 import { RolesGuard } from '../common/guards';
 
 @Controller('admin')
@@ -32,6 +32,15 @@ export class AdminController {
     @Query('limit') limit: string = '20',
   ) {
     return this.adminService.getTransactions(parseInt(page, 10), parseInt(limit, 10));
+  }
+
+  @Post('users/:id/adjust-balance')
+  async adjustBalance(
+    @Param('id') userId: string,
+    @Body() body: { amount: number; reason: string },
+    @CurrentUser('userId') operatorId: string,
+  ) {
+    return this.adminService.adjustBalance(userId, body.amount, body.reason, operatorId);
   }
 
   @Post('rooms/:id/pause')
