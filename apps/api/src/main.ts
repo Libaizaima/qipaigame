@@ -38,7 +38,7 @@ async function bootstrap() {
   // 全局响应转换
   app.useGlobalInterceptors(new TransformInterceptor());
 
-  const port = configService.get<number>('PORT', 3000);
+  const port = configService.get<number>('PORT', 6989);
   await app.listen(port);
 
   logger.log(`🚀 Application is running on: http://localhost:${port}/api`);

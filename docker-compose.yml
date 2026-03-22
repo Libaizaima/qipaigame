@@ -43,14 +43,14 @@ services:
     container_name: am-game-api
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "6989:6989"
     environment:
       DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/am_game?schema=public"
       REDIS_URL: "redis://redis:6379"
       JWT_SECRET: "${JWT_SECRET:-change-this-to-a-secure-random-string}"
       JWT_EXPIRES_IN: "15m"
       JWT_REFRESH_EXPIRES_IN: "7d"
-      PORT: "3000"
+      PORT: "6989"
       INITIAL_BALANCE: "10000"
       BACCARAT_BETTING_SECONDS: "20"
       DICE_BETTING_SECONDS: "15"

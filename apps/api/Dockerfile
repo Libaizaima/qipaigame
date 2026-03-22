@@ -31,6 +31,6 @@ COPY --from=builder /app/prisma ./prisma
 COPY entrypoint.sh ./
 RUN chmod +x entrypoint.sh
 
-EXPOSE 3000
+EXPOSE 6989
 
 CMD ["./entrypoint.sh"]
