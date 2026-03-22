@@ -1,4 +1,7 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:6989/api';
+const isServer = typeof window === 'undefined';
+const API_BASE = isServer 
+  ? (process.env.INTERNAL_API_URL || 'http://localhost:6989/api')
+  : (process.env.NEXT_PUBLIC_API_URL || '/api');
 
 interface ApiOptions {
   method?: string;
