@@ -1,0 +1,241 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==================== 用户相关 ====================
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  email        String?  @unique
+  passwordHash String   @map("password_hash")
+  role         UserRole @default(PLAYER)
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  wallet       Wallet?
+  bets         Bet[]
+  sessions     UserSession[]
+  loginLogs    LoginLog[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  PLAYER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  BANNED
+  SUSPENDED
+}
+
+model UserSession {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  refreshToken String   @map("refresh_token")
+  expiresAt    DateTime @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("user_sessions")
+}
+
+model LoginLog {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  ip        String?
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("login_logs")
+}
+
+// ==================== 钱包相关 ====================
+
+model Wallet {
+  id            String   @id @default(uuid())
+  userId        String   @unique @map("user_id")
+  balance       Decimal  @default(0) @db.Decimal(18, 2)
+  frozenBalance Decimal  @default(0) @map("frozen_balance") @db.Decimal(18, 2)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user         User @relation(fields: [userId], references: [id])
+  transactions WalletTransaction[]
+
+  @@map("wallets")
+}
+
+model WalletTransaction {
+  id            String              @id @default(uuid())
+  userId        String              @map("user_id")
+  walletId      String              @map("wallet_id")
+  type          WalletTransactionType
+  amount        Decimal             @db.Decimal(18, 2)
+  beforeBalance Decimal             @map("before_balance") @db.Decimal(18, 2)
+  afterBalance  Decimal             @map("after_balance") @db.Decimal(18, 2)
+  referenceType String?             @map("reference_type")
+  referenceId   String?             @map("reference_id")
+  createdAt     DateTime            @default(now()) @map("created_at")
+
+  wallet Wallet @relation(fields: [walletId], references: [id])
+
+  @@unique([referenceType, referenceId], name: "unique_reference")
+  @@map("wallet_transactions")
+}
+
+enum WalletTransactionType {
+  BET_PLACE     // 下注扣款
+  BET_WIN       // 中奖派奖
+  BET_REFUND    // 下注退款
+  BONUS         // 赠送筹码
+  ADMIN_ADJUST  // 管理员调整
+}
+
+// ==================== 游戏相关 ====================
+
+model Game {
+  id        String     @id @default(uuid())
+  code      String     @unique
+  name      String
+  status    GameStatus @default(ACTIVE)
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  rooms  GameRoom[]
+  rounds GameRound[]
+  bets   Bet[]
+
+  @@map("games")
+}
+
+enum GameStatus {
+  ACTIVE
+  MAINTENANCE
+  DISABLED
+}
+
+model GameRoom {
+  id             String     @id @default(uuid())
+  gameId         String     @map("game_id")
+  roomCode       String     @unique @map("room_code")
+  roomName       String     @map("room_name")
+  status         RoomStatus @default(ACTIVE)
+  currentRoundId String?    @map("current_round_id")
+  minBet         Decimal    @default(10) @map("min_bet") @db.Decimal(18, 2)
+  maxBet         Decimal    @default(10000) @map("max_bet") @db.Decimal(18, 2)
+  bettingSeconds Int        @default(20) @map("betting_seconds")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+
+  game   Game        @relation(fields: [gameId], references: [id])
+  rounds GameRound[]
+  bets   Bet[]
+
+  @@map("game_rooms")
+}
+
+enum RoomStatus {
+  ACTIVE
+  PAUSED
+  CLOSED
+}
+
+model GameRound {
+  id         String      @id @default(uuid())
+  gameId     String      @map("game_id")
+  roomId     String      @map("room_id")
+  roundNo    Int         @map("round_no")
+  status     RoundStatus @default(WAITING)
+  startAt    DateTime?   @map("start_at")
+  betCloseAt DateTime?   @map("bet_close_at")
+  resultAt   DateTime?   @map("result_at")
+  settledAt  DateTime?   @map("settled_at")
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  game   Game        @relation(fields: [gameId], references: [id])
+  room   GameRoom    @relation(fields: [roomId], references: [id])
+  result RoundResult?
+  bets   Bet[]
+
+  @@unique([roomId, roundNo])
+  @@map("game_rounds")
+}
+
+enum RoundStatus {
+  WAITING
+  BETTING
+  CLOSED
+  DRAWING
+  SETTLING
+  FINISHED
+}
+
+model RoundResult {
+  id            String   @id @default(uuid())
+  roundId       String   @unique @map("round_id")
+  gameId        String   @map("game_id")
+  resultPayload Json     @map("result_payload")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  round GameRound @relation(fields: [roundId], references: [id])
+
+  @@map("round_results")
+}
+
+// ==================== 下注相关 ====================
+
+model Bet {
+  id             String    @id @default(uuid())
+  userId         String    @map("user_id")
+  gameId         String    @map("game_id")
+  roomId         String    @map("room_id")
+  roundId        String    @map("round_id")
+  betType        String    @map("bet_type")
+  betAmount      Decimal   @map("bet_amount") @db.Decimal(18, 2)
+  odds           Decimal   @db.Decimal(10, 4)
+  status         BetStatus @default(PENDING)
+  payoutAmount   Decimal?  @map("payout_amount") @db.Decimal(18, 2)
+  idempotencyKey String?   @unique @map("idempotency_key")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  user  User      @relation(fields: [userId], references: [id])
+  game  Game      @relation(fields: [gameId], references: [id])
+  room  GameRoom  @relation(fields: [roomId], references: [id])
+  round GameRound @relation(fields: [roundId], references: [id])
+
+  @@map("bets")
+}
+
+enum BetStatus {
+  PENDING
+  WON
+  LOST
+  REFUNDED
+}
+
+// ==================== 操作日志 ====================
+
+model OperationLog {
+  id        String   @id @default(uuid())
+  operator  String
+  action    String
+  target    String?
+  detail    Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("operation_logs")
+}

@@ -1,0 +1,99 @@
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+
+interface ApiOptions {
+  method?: string;
+  body?: any;
+  token?: string;
+}
+
+export async function api<T = any>(endpoint: string, options: ApiOptions = {}): Promise<T> {
+  const { method = 'GET', body, token } = options;
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || `API Error: ${res.status}`);
+  }
+
+  return data.data ?? data;
+}
+
+// ===== Auth =====
+export const authApi = {
+  register: (body: { username: string; password: string; email?: string }) =>
+    api('/auth/register', { method: 'POST', body }),
+
+  login: (body: { username: string; password: string }) =>
+    api('/auth/login', { method: 'POST', body }),
+
+  refresh: (refreshToken: string) =>
+    api('/auth/refresh', { method: 'POST', body: { refreshToken } }),
+
+  logout: (refreshToken: string) =>
+    api('/auth/logout', { method: 'POST', body: { refreshToken } }),
+};
+
+// ===== User =====
+export const userApi = {
+  getProfile: (token: string) =>
+    api('/users/me', { token }),
+
+  getBalance: (token: string) =>
+    api('/users/me/balance', { token }),
+};
+
+// ===== Games & Rooms =====
+export const gameApi = {
+  getGames: () => api('/games'),
+  getRooms: (gameCode?: string) =>
+    api(`/rooms${gameCode ? `?game=${gameCode}` : ''}`),
+  getRoomDetail: (roomId: string) =>
+    api(`/rooms/${roomId}`),
+};
+
+// ===== Bets =====
+export const betApi = {
+  placeBet: (token: string, body: {
+    roomId: string;
+    betType: string;
+    betAmount: number;
+    idempotencyKey?: string;
+  }) => api('/bets', { method: 'POST', body, token }),
+
+  getMyBets: (token: string, page = 1, limit = 20) =>
+    api(`/bets/my?page=${page}&limit=${limit}`, { token }),
+};
+
+// ===== History =====
+export const historyApi = {
+  getRounds: (params?: { game?: string; roomId?: string; page?: number; limit?: number }) => {
+    const sp = new URLSearchParams();
+    if (params?.game) sp.set('game', params.game);
+    if (params?.roomId) sp.set('roomId', params.roomId);
+    if (params?.page) sp.set('page', String(params.page));
+    if (params?.limit) sp.set('limit', String(params.limit));
+    return api(`/history/rounds?${sp.toString()}`);
+  },
+  getBaccarat: (page = 1) => api(`/history/baccarat?page=${page}`),
+  getDice: (page = 1) => api(`/history/dice?page=${page}`),
+};
+
+// ===== Wallet =====
+export const walletApi = {
+  getTransactions: (token: string, page = 1, limit = 20) =>
+    api(`/wallet/transactions?page=${page}&limit=${limit}`, { token }),
+};

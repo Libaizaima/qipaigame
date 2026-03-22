@@ -1,0 +1,30 @@
+import { OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
+import { SettlementService } from '../settlement/settlement.service';
+import { WsService } from '../ws/ws.service';
+export declare class GameLoopService implements OnModuleInit, OnModuleDestroy {
+    private prisma;
+    private redisService;
+    private configService;
+    private settlementService;
+    private wsService;
+    private readonly logger;
+    private readonly roomTimers;
+    private isRunning;
+    constructor(prisma: PrismaService, redisService: RedisService, configService: ConfigService, settlementService: SettlementService, wsService: WsService);
+    onModuleInit(): Promise<void>;
+    onModuleDestroy(): void;
+    initializeRooms(): Promise<void>;
+    startRoomLoop(roomId: string, gameCode: string, bettingSeconds: number): void;
+    stopRoomLoop(roomId: string): void;
+    stopAllLoops(): void;
+    private runRound;
+    private createNewRound;
+    private updateRoundStatus;
+    private executeGame;
+    private runCountdown;
+    private cacheRecentResult;
+    private sleep;
+}
